@@ -21,6 +21,9 @@ class b_plus_tree_config:
     init root node
     '''
     def __init__(self, root, degree):
+        '''
+        b_plus_tree configuration
+        '''
         self.degree = degree
         self.root = node(root)
 
