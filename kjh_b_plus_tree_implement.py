@@ -179,11 +179,22 @@ class b_plus_tree_config:
                         #일단 삭제하고, 그 후에 조건 부 함수를 사용해야할듯
                         leaf_node_for_deletion.values.pop(num)
                         leaf_node_for_deletion.keys.pop(num)
-
+                        self.condition_delete(leaf_node_for_deletion, value,key)
+                else:
+                    print('키가 없음')
+            else:
+                print("값이 없음")
 
 
     def condition_delete(self, leaf_node, value, key):
-        
+        '''
+        1. 만약 leaf_node에서 삭제되는 값이 pnode의 value값이랑 같으면 pnode의 value값이 바뀌어야함
+        2. 위에서 바뀌는 pnode의 value는 기존 leafnode에서 가잔 작은 value가 올라가거나
+        3. leafnode에 value가 없다면, 그 pnode의 value는 사라져야함.
+        4. pnode에 key가 맨 처음에 있다면, pnode의 value값은 옆 노드에서 하나 끌어와야함.
+        5. 옆의 node에도 값이 충분하게 있지 않다면, 삭제된 pnode와 이웃 node와 merge가 일어나야함.
+        6. 
+        '''
 
 
         # for num, i in enumerate(leaf_node_for_deletion.values):

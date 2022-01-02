@@ -23,3 +23,6 @@ print(a[3:])
 print(a[:3])
 del a[3]
 print(a)
+a = [1,2]
+if not (a == tuple):
+    print("튜플이 아님")
