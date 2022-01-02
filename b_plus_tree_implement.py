@@ -96,6 +96,7 @@ class BplusTree:
             self.root = rootNode
             n.parent = rootNode
             ndash.parent = rootNode
+            print(rootNode.keys)
             return
 
         parentNode = n.parent
@@ -290,10 +291,10 @@ def printTree(tree):
         lev = level.pop(0)
         if (x.check_leaf == False):
             for i, item in enumerate(x.keys):
-                print(item.values)
+                print("1",item.values)
         else:
             for i, item in enumerate(x.keys):
-                print(item.values)
+                print("1", item.values)
             if (flag == 0):
                 lev_leaf = lev
                 leaf = x
