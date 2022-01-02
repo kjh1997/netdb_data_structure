@@ -173,7 +173,8 @@ class BplusTree:
             node_.keys[0].parent = None
             del node_
             return
-        elif (len(node_.keys) < int(math.ceil(node_.order / 2)) and node_.check_leaf == False) or (len(node_.values) < int(math.ceil((node_.order - 1) / 2)) and node_.check_leaf == True):
+        elif (len(node_.keys) < int(math.ceil(node_.order / 2)) and node_.check_leaf == False) or/
+         (len(node_.values) < int(math.ceil((node_.order - 1) / 2)) and node_.check_leaf == True):
 
             is_predecessor = 0
             parentNode = node_.parent

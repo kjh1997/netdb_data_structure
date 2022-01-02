@@ -162,9 +162,31 @@ class b_plus_tree_config:
 # 4. pnode가 비효율적으로 이루어져있다면, merge해야함.
 # '''
     def delete(self, value, key):
-        node_for_deletion = self.search(value)
+        leaf_node_for_deletion = self.find_leaf_node(value)
+        print(leaf_node_for_deletion.keys)
+        for num, i in enumerate(leaf_node_for_deletion.values):
+            # i 는 단일 값, num은 list안에서의 i값의 순서
+            if i == value:
+                if key in leaf_node_for_deletion.keys:
+                    # 여기까지 왔으면 해당 key와 value가 존재하는데, 삭제 후 노드들을 병합을 하던가
+                    # 일반삭제를 해야함. 
+                    if leaf_node_for_deletion == self.root_node:
+                        #이건 root node만 존재할 때. value, key 삭제
+                        leaf_node_for_deletion.values.pop(num)
+                        leaf_node_for_deletion.keys.pop(num)
+                    else:
+                        #이게 지옥임. ㅈㄴ힘들듯
+                        #일단 삭제하고, 그 후에 조건 부 함수를 사용해야할듯
+                        leaf_node_for_deletion.values.pop(num)
+                        leaf_node_for_deletion.keys.pop(num)
 
-        # for num, i in enumerate(node_for_deletion.values):
+
+
+    def condition_delete(self, leaf_node, value, key):
+        
+
+
+        # for num, i in enumerate(leaf_node_for_deletion.values):
         #     if key in node
 
 
@@ -228,4 +250,7 @@ bptree.insert_value(21,37407)
 bptree.insert_value(32,31777)
 bptree.insert_value(66,37257)
 bptree.insert_value(281,37247)
+
 print_node(bptree)
+
+bptree.delete(12,23)
