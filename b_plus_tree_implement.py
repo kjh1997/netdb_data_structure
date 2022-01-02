@@ -137,9 +137,12 @@ class BplusTree:
                 if key in node_.keys[i]:
                     if len(node_.keys[i]) > 1:
                         node_.keys[i].pop(node_.keys[i].index(key))
+                        print(node_.keys[i].pop(node_.keys[i].index(key)))
                     elif node_ == self.root:
                         node_.values.pop(i)
                         node_.keys.pop(i)
+                        print(node_.keys.pop(i))
+                        print(node_.values.pop(i))
                     else:
                         node_.keys[i].pop(node_.keys[i].index(key))
                         del node_.keys[i]
@@ -300,18 +303,37 @@ def printTree(tree):
                 leaf = x
                 flag = 1
 
+def all_node(tree):
+    print(tree.root)
+    leaf = []
+    for num, i in enumerate(tree.root.keys):
+        print(num, i.keys)
+        for j in i.keys:
+            print("??",j.keys)
+            
+            # for k in j.keys:
+            #     print(k)
+      
+    print(leaf)
 
 record_len = 3
 bplustree = BplusTree(record_len)
 bplustree.insert('5', '33')
-bplustree.insert('15', '21')
+bplustree.insert('15', '33')
 bplustree.insert('25', '31')
 bplustree.insert('35', '41')
 bplustree.insert('45', '10')
+bplustree.insert('562', '35')
+bplustree.insert('1523', '26')
+bplustree.insert('251', '37')
+bplustree.insert('355', '48')
+bplustree.insert('4125', '19')
+#bplustree.delete('5','33')
 
-printTree(bplustree)
+all_node(bplustree)
+#printTree(bplustree)
 
-if(bplustree.find('5', '34')):
-    print("Found")
-else:
-    print("Not found")
+# if(bplustree.find('5', '34')):
+#     print("Found")
+# else:
+#     print("Not found")

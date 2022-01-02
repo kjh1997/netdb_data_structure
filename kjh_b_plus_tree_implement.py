@@ -20,7 +20,7 @@ class node:
         self.values = [] # 값
         self.keys = [] # 값에 대한 키
 
-    def insert(self, leaf, value, key):
+    def insert(self, value, key):
         if (self.values):
             temp = self.values
             for i in range(len(temp)):
@@ -40,7 +40,7 @@ class node:
         else:
             self.values = [value]
             self.keys = [key]
-        print(self, self.keys)
+      #  print(self)
 
 class b_plus_tree_config:
     '''
@@ -54,24 +54,34 @@ class b_plus_tree_config:
         self.degree = degree
         self.root_node = node(True)
 # ----------------------------------삽입 기능 ---------------------------------- 
+# '''
+# 1. leaf node를 찾는다.
+# 2. 값을 삽입한다.
+# 3. leaf node의 value의 길이가 degree이면 decompose하고 pnode를 만들어야함.
+# 4. 
+# '''
     def insert_value(self, value, key):
         '''
         key, value 삽입 과정
         '''
-        leaf_node = self.find_leaf_node(value)
-        leaf_node.insert(leaf_node, key, value)
+        
+        leaf_node = self.find_leaf_node(value) # 해당 값을 넣을 leaf node를 찾아줌.
+       # print(leaf_node)
+        leaf_node.insert(key, value) # 해당 leafnode의 고유 함수를 사용해서 value를 삽입함.
         if(len(leaf_node.values) == self.degree):
             # leaf_node에 값을 넣었는데, 이 values의 길이가 degree랑 같으면 decompose가 일어나야함.
             add_leaf_node = node(True)
             add_leaf_node.pkey = leaf_node.pkey
+            add_leaf_node.ckey = leaf_node.ckey
             mid_key = int(math.ceil(self.degree /2)) - 1
             add_leaf_node.values = leaf_node.values[mid_key+1:]
             add_leaf_node.keys = leaf_node.keys[mid_key+1:]
             leaf_node.keys = leaf_node.keys[:mid_key+1]
             leaf_node.values = leaf_node.values[:mid_key+1]
-            print('1',leaf_node.values)
-            print('2',add_leaf_node.values)
+            #print('1',leaf_node.values)
+            #print('2',add_leaf_node.values)
             leaf_node.ckey = add_leaf_node
+            print(add_leaf_node)
             self.new_internal_node(leaf_node, add_leaf_node.values[0], add_leaf_node)
 
     def new_internal_node(self, prior_node, std_value, new_node):
@@ -82,8 +92,8 @@ class b_plus_tree_config:
             root_node.values = [std_value]
             root_node.keys = [prior_node, new_node]
             self.root_node = root_node
-            prior_node.pkey = new_node
-            new_node.pkey = new_node
+            prior_node.pkey = root_node
+            new_node.pkey = root_node
             return
 
         pnode = prior_node.pkey
@@ -100,11 +110,18 @@ class b_plus_tree_config:
                     mid_key = math.ceil(self.degree/2) -1
                     add_pnode.values = pnode.values[mid_key+1:]
                     add_pnode.keys = pnode.keys[mid_key+1:]
-                    pnode.values = pnode.values[:mid_key+1]
-                    pnode.keys = pnode.keys[:mid_key+1]
-                    self.new_internal_node(pnode, add_pnode.values[0], add_pnode)
+                    # 노드를 분리하면서 자식 노드도 같이 옮겨줌.
+                    for j in pnode.keys:
+                        j.pkey = pnode
+                    for j in add_pnode.keys:
+                        j.pkey = add_pnode
+                    
+                    self.new_internal_node(pnode, pnode.values[mid_key], add_pnode)
 
     def find_leaf_node(self, value):        
+        '''
+        해당 값이 들어 있을 leaf node를 찾아주는 함수 // 삽입, 삭제 둘 다 사용함.
+        '''
         current_node = self.root_node
         while(current_node.isleaf == False):
             '''
@@ -137,10 +154,69 @@ class b_plus_tree_config:
 
     
 # ---------------------------------------- 삽입 기능 끝 ------------------------------------- 
+# -------------------------------------삭제 기능 시작 -----------------------------------
+# '''
+# 1. 일단 값이 들어가 있을 leaf node를 찾아야함.
+# 2. leaf node를 찾고 해당 값과 키를 꺼내야함.
+# 3. 꺼내고 나서 해당 leaf node의 value가 pnode의 value에 있다면, pnode의 value도 삭제해주어야함.
+# 4. pnode가 비효율적으로 이루어져있다면, merge해야함.
+# '''
+    def delete(self, value, key):
+        node_for_deletion = self.search(value)
 
+        # for num, i in enumerate(node_for_deletion.values):
+        #     if key in node
+
+
+# -----------------------------------삭제 기능 끝 ---------------------------------------
         
 
-btree_degree = 3
+
+# ----------------------------------탐색 기능 ----------------------------
+    def search_all_leaf_node(self):
+        if self.root_node.isleaf == False:
+            main_key = self.root_node.keys
+            print("?")
+            print(main_key)
+            for i in main_key:
+                print(i)
+                self.leaf_node(i)
+                print(i)
+        else:
+            print(self.root_node.values)
+
+    def leaf_node(self, node):
+        
+
+        while (node.isleaf == True):
+            print("왜 실?")
+            print(node.keys)
+            keys = node.keys
+            #print(keys)
+            
+            for i in keys:
+                print("1",i)
+                self.leaf_node(i)
+        
+        #print(node.values)
+
+            
+def print_node(tree):
+    x = tree.root_node
+    leaf = []
+    print(x.keys)
+    for num, i in enumerate(x.keys):
+        print(num, i.ckey)
+        
+            
+            # for k in j.keys:
+            #     print(k)
+      
+    print(leaf)
+
+
+# --------------------------------끝----------------------
+btree_degree = 4
 bptree = b_plus_tree_config(btree_degree)
 bptree.insert_value(5,33)
 bptree.insert_value(7,34)
@@ -152,3 +228,4 @@ bptree.insert_value(21,37407)
 bptree.insert_value(32,31777)
 bptree.insert_value(66,37257)
 bptree.insert_value(281,37247)
+print_node(bptree)
