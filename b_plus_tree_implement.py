@@ -136,17 +136,21 @@ class BplusTree:
 
                 if key in node_.keys[i]:
                     if len(node_.keys[i]) > 1:
+                        # 그냥 값만 삭제
                         node_.keys[i].pop(node_.keys[i].index(key))
                         print(node_.keys[i].pop(node_.keys[i].index(key)))
                     elif node_ == self.root:
+                        # root node에서 삭제
                         node_.values.pop(i)
                         node_.keys.pop(i)
                         print(node_.keys.pop(i))
                         print(node_.values.pop(i))
                     else:
+                        # 노드가 삭제 될 경우.
                         node_.keys[i].pop(node_.keys[i].index(key))
                         del node_.keys[i]
                         node_.values.pop(node_.values.index(value))
+                        # 삭제 후 들어감.
                         self.deleteEntry(node_, value, key)
                 else:
                     print("Value not in Key")
@@ -158,7 +162,8 @@ class BplusTree:
     # Delete an entry
     def deleteEntry(self, node_, value, key):
 
-        if not node_.check_leaf:
+        if not node_.check_leaf: # 리프노드가 아니면 >> internal node # 아까 만약에 leaf node 를 삭제하고 pnode가 여기에 들어왔으면
+                                                                     #여기서 삭제한 leaf node 에 해당하는  key를 삭제함. 마찬가지로 해당하는 value도 삭제함.
             for i, item in enumerate(node_.keys):
                 if item == key:
                     node_.keys.pop(i)
@@ -169,49 +174,67 @@ class BplusTree:
                     break
 
         if self.root == node_ and len(node_.keys) == 1:
+            # 노드가 루트노드이고 키가 1개 // 루트노드면 그냥 삭제하면 됨.
             self.root = node_.keys[0]
             node_.keys[0].parent = None
             del node_
             return
-        elif (len(node_.keys) < int(math.ceil(node_.order / 2)) and node_.check_leaf == False) or/
-         (len(node_.values) < int(math.ceil((node_.order - 1) / 2)) and node_.check_leaf == True):
 
+        elif (len(node_.keys) < int(math.ceil(node_.order / 2)) and node_.check_leaf == False) or (len(node_.values) < int(math.ceil((node_.order - 1) / 2)) and node_.check_leaf == True):
+                # (노드의 키가  degree/2보다 작고, 노드가 internal node) or (노드의 값의 길이 < (degree-1)/2 이고, 노드가 leaf node)
+                # ex) internal node가 
             is_predecessor = 0
-            parentNode = node_.parent
+            parentNode = node_.parent # 직속 상위 노드
             PrevNode = -1
             NextNode = -1
             PrevK = -1
             PostK = -1
             for i, item in enumerate(parentNode.keys):
+                # pnode에서 키(자식노드(degree = 3 일 경우 key는 3개까지 존재 가능))
 
                 if item == node_:
+                    # current node와 pnode의 item(key)가 같으면 
+                    # 이웃(앞, 뒤) 을 찾아줘야함.
+                    #  |    k1  |v| k2  |v|  k3  ㅣ
                     if i > 0:
-                        PrevNode = parentNode.keys[i - 1]
-                        PrevK = parentNode.values[i - 1]
+                        # 자신과 같은 depth에 위치한 이웃(뒤에 위치)한 노드
+                        #  pnode |    k1  |v1| k2  |v2|  k3  ㅣ
+                        PrevNode = parentNode.keys[i - 1] # k1
+                        PrevK = parentNode.values[i - 1]  # v1
 
-                    if i < len(parentNode.keys) - 1:
-                        NextNode = parentNode.keys[i + 1]
-                        PostK = parentNode.values[i]
+                    if i < len(parentNode.keys) - 1: # i가 부모키의 길이보다 1이 작아야함. 이유는 degree가 3일 경우 value는 2개, key는 3개까지 가질 수 있음.
+                                                     #  #앞에 위치한 노드
+                        NextNode = parentNode.keys[i + 1] # k3 or k2
+                        PostK = parentNode.values[i]      # v2 or v1
 
             if PrevNode == -1:
+                # 위에서 이웃 노드를찾았는데 이전에 위치한 노드가 없으면
                 ndash = NextNode
                 value_ = PostK
             elif NextNode == -1:
+                # 위에서 이웃 노드를찾았는데 앞에 위치한 노드가 없으면
                 is_predecessor = 1
-                ndash = PrevNode
-                value_ = PrevK
+                ndash = PrevNode    # k3 or k2
+                value_ = PrevK      # v2 or v1
             else:
+                # 둘 다 위치한 경우
                 if len(node_.values) + len(NextNode.values) < node_.order:
+                    # 현재 노드의 값의 길이랑 앞에 위치한 노드의 값의 길이의 합이 degree보다 작을 경우. >> 비효율적이므로, merge가 일어나야하므로, 밑에 
                     ndash = NextNode
                     value_ = PostK
                 else:
+                    
                     is_predecessor = 1
                     ndash = PrevNode
                     value_ = PrevK
 
             if len(node_.values) + len(ndash.values) < node_.order:
+                # 위에서 merge가 필요한 node를 골라 ndash와 value에 각 담았다. 이제 merge를 진행한다.
+                #  |    k1  |v| k2  |v|  k3  ㅣ
+                # k2(node)랑 k3(ndash)랑 merge작업  // k3삭제
                 if is_predecessor == 0:
                     node_, ndash = ndash, node_
+                    # ndash에 있는 key
                 ndash.keys += node_.keys
                 if not node_.check_leaf:
                     ndash.values.append(value_)
@@ -224,26 +247,34 @@ class BplusTree:
                         j.parent = ndash
 
                 self.deleteEntry(node_.parent, value_, node_)
+                # 노드의 상위 노드를 건드려야함. 
+                # 낭비되는 공간을 삭제 후 부모 노드를 삭제한다. 부모 노드를 다시 조건부 삭제 함수에 넣는다.
                 del node_
             else:
+                # 여기까지 오면 값들과 키 들은 다 삭제가 되어있다.
+                # 이 else문에서 하는 역할은
                 if is_predecessor == 1:
+                    # 이 경우는 pre, next node가 둘 다 있기는 하지만, next node의 value 의 길이와  현재 노드의 길이의 합이 degree보다 작을 경우이거나, // pre node와 next node 둘 다 없을 경우에 해당함.
                     if not node_.check_leaf:
-                        ndashpm = ndash.keys.pop(-1)
-                        ndashkm_1 = ndash.values.pop(-1)
-                        node_.keys = [ndashpm] + node_.keys
+                        # internal node
+                        ndashpm = ndash.keys.pop(-1) # 맨 끝의 키를 뽑음.
+                        ndashkm_1 = ndash.values.pop(-1) #  맨 끝의 값을 뽑음
+                        
+                        node_.keys = [ndashpm] + node_.keys 
                         node_.values = [value_] + node_.values
                         parentNode = node_.parent
                         for i, item in enumerate(parentNode.values):
                             if item == value_:
-                                p.values[i] = ndashkm_1
+                                parentNode.values[i] = ndashkm_1
                                 break
                     else:
+                        # leaf node
                         ndashpm = ndash.keys.pop(-1)
                         ndashkm = ndash.values.pop(-1)
                         node_.keys = [ndashpm] + node_.keys
                         node_.values = [ndashkm] + node_.values
                         parentNode = node_.parent
-                        for i, item in enumerate(p.values):
+                        for i, item in enumerate(parentNode.values):
                             if item == value_:
                                 parentNode.values[i] = ndashkm
                                 break
@@ -329,9 +360,18 @@ bplustree.insert('1523', '26')
 bplustree.insert('251', '37')
 bplustree.insert('355', '48')
 bplustree.insert('4125', '19')
-#bplustree.delete('5','33')
+bplustree.delete('5','33')
+bplustree.delete('562', '35')
+bplustree.delete('1523', '26')
+bplustree.delete('251', '37')
+bplustree.delete('355', '48')
+bplustree.delete('4125', '19')
+bplustree.delete('15', '33')
+bplustree.delete('25', '31')
+bplustree.delete('35', '41')
+bplustree.delete('45', '10')
 
-all_node(bplustree)
+
 #printTree(bplustree)
 
 # if(bplustree.find('5', '34')):

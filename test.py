@@ -16,13 +16,20 @@
 # print(values)
 # print(keys)
 import math
-print(3 / 2 - 1)
+# print(3 / 2 - 1)
 
-a = [1,2,3,4,5]
-print(a[3:])
-print(a[:3])
-del a[3]
-print(a)
-a = [1,2]
-if not (a == tuple):
-    print("튜플이 아님")
+# a = [1,2,3,4,5]
+# print(a[3:])
+# print(a[:3])
+# del a[3]
+# print(a)
+# a = [1,2]
+# if not (a == tuple):
+#     print("튜플이 아님")
+
+a  =  [1,2,4,5,6,78]
+print(a.pop(-1))
+if type(a) == list:
+    print(1)
+elif type(a) == list:
+    print(a)
