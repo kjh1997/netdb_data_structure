@@ -66,8 +66,7 @@ class b_plus_tree_config:
         '''
         
         leaf_node = self.find_leaf_node(value) # 해당 값을 넣을 leaf node를 찾아줌.
-       # print(leaf_node)
-        leaf_node.insert(key, value) # 해당 leafnode의 고유 함수를 사용해서 value를 삽입함.
+        leaf_node.insert(value, key) # 해당 leafnode의 고유 함수를 사용해서 value를 삽입함.
         if(len(leaf_node.values) == self.degree):
             # leaf_node에 값을 넣었는데, 이 values의 길이가 degree랑 같으면 decompose가 일어나야함.
             add_leaf_node = node(True)
@@ -78,10 +77,8 @@ class b_plus_tree_config:
             add_leaf_node.keys = leaf_node.keys[mid_key+1:]
             leaf_node.keys = leaf_node.keys[:mid_key+1]
             leaf_node.values = leaf_node.values[:mid_key+1]
-            #print('1',leaf_node.values)
-            #print('2',add_leaf_node.values)
+            
             leaf_node.ckey = add_leaf_node
-            print(add_leaf_node)
             self.new_internal_node(leaf_node, add_leaf_node.values[0], add_leaf_node)
 
     def new_internal_node(self, prior_node, std_value, new_node):
@@ -152,6 +149,16 @@ class b_plus_tree_config:
                     break
         return current_node
 
+    def find(self, value, key):
+        l = self.find_leaf_node(value)
+        for i, item in enumerate(l.values):
+            if item == value:
+                if key in l.keys[i]:
+                    return True
+                else:
+                    return False
+        return False
+
     
 # ---------------------------------------- 삽입 기능 끝 ------------------------------------- 
 # -------------------------------------삭제 기능 시작 -----------------------------------
@@ -163,7 +170,6 @@ class b_plus_tree_config:
 # '''
     def delete(self, value, key):
         leaf_node_for_deletion = self.find_leaf_node(value)
-        print(leaf_node_for_deletion.keys)
         for num, i in enumerate(leaf_node_for_deletion.values):
             # i 는 단일 값, num은 list안에서의 i값의 순서
             if i == value:
@@ -186,7 +192,7 @@ class b_plus_tree_config:
                 print("값이 없음")
 
 
-    def condition_delete(self, leaf_node, value, key):
+    def condition_delete(self, node, value, key):
         '''
         1. 만약 leaf_node에서 삭제되는 값이 pnode의 value값이랑 같으면 pnode의 value값이 바뀌어야함
         2. 위에서 바뀌는 pnode의 value는 기존 leafnode에서 가잔 작은 value가 올라가거나
@@ -195,73 +201,157 @@ class b_plus_tree_config:
         5. 옆의 node에도 값이 충분하게 있지 않다면, 삭제된 pnode와 이웃 node와 merge가 일어나야함.
         6. 
         '''
+        if not node.isleaf:
+            # 처음에 들어오는 값은 leafnode이지만 후에 이 함수를 다시 호출하면 internal node이다.
+            for i, item in enumerate(node.keys):
+                if item == key:
+                    node.keys.pop(i)
+                    break
+            for i, item in enumerate(node.values):
+                if item == value:
+                    node.values.pop(i)
+                    break
+        if node == self.root_node and len(node.keys) == 1:
+            self.root_node = node.keys[0]
+            node.keys[0].pkey = None
+            # 자식의 pkey값을 None로 바꿈.
+            del node
+            return
+        elif (len(node.keys) < int(math.ceil(self.degree / 2)) and node.isleaf == False) or (len(node.values) < int(math.ceil((self.degree - 1) / 2)) and node.isleaf == True):
 
+            is_predecessor = 0
+            pnode = node.parent
+            PrevNode = -1
+            NextNode = -1
+            PrevK = -1
+            PostK = -1
+            for i, item in enumerate(pnode.keys):
+                if item == node:
+                    if i > 0:
+                        PrevNode = pnode.keys[i - 1]
+                        PrevK = pnode.values[i - 1]
 
-        # for num, i in enumerate(leaf_node_for_deletion.values):
-        #     if key in node
+                    if i < len(pnode.keys) - 1:
+                        NextNode = pnode.keys[i + 1]
+                        PostK = pnode.values[i]
+
+            if PrevNode == -1:
+                ndash = NextNode
+                value_ = PostK
+            elif NextNode == -1:
+                is_predecessor = 1
+                ndash = PrevNode
+                value_ = PrevK
+            else:
+                if len(node.values) + len(NextNode.values) < self.degree:
+                    ndash = NextNode
+                    value_ = PostK
+                else:
+                    is_predecessor = 1
+                    ndash = PrevNode
+                    value_ = PrevK
+
+            if len(node.values) + len(ndash.values) < self.degree:
+                if is_predecessor == 0:
+                    node_, ndash = ndash, node
+                ndash.keys += node_.keys
+                if not node_.check_leaf:
+                    ndash.values.append(value_)
+                else:
+                    ndash.nextKey = node_.nextKey
+                ndash.values += node_.values
+
+                if not ndash.check_leaf:
+                    for j in ndash.keys:
+                        j.parent = ndash
+
+                self.deleteEntry(node_.parent, value_, node_)
+                del node_
+            else:
+                if is_predecessor == 1:
+                    if not node.check_leaf:
+                        ndashpm = ndash.keys.pop(-1)
+                        ndashkm_1 = ndash.values.pop(-1)
+                        node.keys = [ndashpm] + node.keys
+                        node.values = [value_] + node.values
+                        parentNode = node.parent
+                        for i, item in enumerate(parentNode.values):
+                            if item == value_:
+                                p.values[i] = ndashkm_1
+                                break
+                    else:
+                        ndashpm = ndash.keys.pop(-1)
+                        ndashkm = ndash.values.pop(-1)
+                        node.keys = [ndashpm] + node.keys
+                        node.values = [ndashkm] + node.values
+                        parentNode = node.parent
+                        for i, item in enumerate(p.values):
+                            if item == value_:
+                                parentNode.values[i] = ndashkm
+                                break
+                else:
+                    if not node.check_leaf:
+                        ndashp0 = ndash.keys.pop(0)
+                        ndashk0 = ndash.values.pop(0)
+                        node.keys = node.keys + [ndashp0]
+                        node.values = node.values + [value_]
+                        parentNode = node.parent
+                        for i, item in enumerate(parentNode.values):
+                            if item == value_:
+                                parentNode.values[i] = ndashk0
+                                break
+                    else:
+                        ndashp0 = ndash.keys.pop(0)
+                        ndashk0 = ndash.values.pop(0)
+                        node.keys = node.keys + [ndashp0]
+                        node.values = node.values + [ndashk0]
+                        parentNode = node.parent
+                        for i, item in enumerate(parentNode.values):
+                            if item == value_:
+                                parentNode.values[i] = ndash.values[0]
+                                break
+
+                if not ndash.check_leaf:
+                    for j in ndash.keys:
+                        j.parent = ndash
+                if not node.check_leaf:
+                    for j in node.keys:
+                        j.parent = node
+                if not parentNode.check_leaf:
+                    for j in parentNode.keys:
+                        j.parent = parentNode
+        
 
 
 # -----------------------------------삭제 기능 끝 ---------------------------------------
         
 
 
-# ----------------------------------탐색 기능 ----------------------------
-    def search_all_leaf_node(self):
-        if self.root_node.isleaf == False:
-            main_key = self.root_node.keys
-            print("?")
-            print(main_key)
-            for i in main_key:
-                print(i)
-                self.leaf_node(i)
-                print(i)
-        else:
-            print(self.root_node.values)
-
-    def leaf_node(self, node):
-        
-
-        while (node.isleaf == True):
-            print("왜 실?")
-            print(node.keys)
-            keys = node.keys
-            #print(keys)
-            
-            for i in keys:
-                print("1",i)
-                self.leaf_node(i)
-        
-        #print(node.values)
-
-            
-def print_node(tree):
-    x = tree.root_node
-    leaf = []
-    print(x.keys)
-    for num, i in enumerate(x.keys):
-        print(num, i.ckey)
-        
-            
-            # for k in j.keys:
-            #     print(k)
-      
-    print(leaf)
-
 
 # --------------------------------끝----------------------
 btree_degree = 4
 bptree = b_plus_tree_config(btree_degree)
-bptree.insert_value(5,33)
-bptree.insert_value(7,34)
-bptree.insert_value(73,34)
-bptree.insert_value(71,3432)
-bptree.insert_value(3,3177)
-bptree.insert_value(6,3727)
-bptree.insert_value(21,37407)
-bptree.insert_value(32,31777)
-bptree.insert_value(66,37257)
-bptree.insert_value(281,37247)
 
-print_node(bptree)
 
-bptree.delete(12,23)
+bptree.insert_value('21','37407')
+bptree.insert_value('32','31777')
+bptree.insert_value('3','3177')
+bptree.insert_value('6','3727')
+bptree.insert_value('66','37257')
+bptree.insert_value('7','34')
+bptree.insert_value('73','34')
+bptree.insert_value('5','33')
+bptree.insert_value('71','3432')
+
+bptree.insert_value('281','37247')
+
+if(bptree.find('5','33')):
+    print("Found")
+else:
+    print("Not found")
+bptree.delete('5','33')
+
+if(bptree.find('5','33')):
+    print("Found")
+else:
+    print("Not found")
