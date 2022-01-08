@@ -10,20 +10,24 @@ class node:
     keys = keys to this node.
     '''
     def __init__(self, t_f):
-      #  self.root = t_f # 맨 꼭대기 노드?
         self.pkey = None # 부모 키
                          # 자식노드가 부모노드와 상호작용하기위해 사용함.
         
         self.ckey = None # 아이 키 >> 리프노드는 연결리스트 구조.
                          # leaf node에서의 연결리스트를 구현하기 위해 존재함.
-        self.isleaf = t_f # 리프노드 ?
+        self.isleaf = t_f # 리프노드 인가?
         self.values = [] # 값
         self.keys = [] # 값에 대한 키
 
     def insert(self, value, key):
+        #print(self)
         if (self.values):
             temp = self.values
+            if  value in temp:
+                print("이미 똑같은 값이 있습니다.")
+                return
             for i in range(len(temp)):
+                
                 if value < temp[i]:
                     '''
                     넣으려는 값이 leaf_node의 i번째 값 보다 작을 때.
@@ -147,6 +151,8 @@ class b_plus_tree_config:
                     '''
                     current_node = current_node.keys[i+1]
                     break
+        print(current_node.keys)
+        print(current_node.values)
         return current_node
 
     def find(self, value, key):
@@ -185,7 +191,7 @@ class b_plus_tree_config:
                         #일단 삭제하고, 그 후에 조건 부 함수를 사용해야할듯
                         leaf_node_for_deletion.values.pop(num)
                         leaf_node_for_deletion.keys.pop(num)
-                        self.condition_delete(leaf_node_for_deletion, value,key)
+                        self.condition_delete(leaf_node_for_deletion, value, key)
                 else:
                     print('키가 없음')
             else:
@@ -218,108 +224,112 @@ class b_plus_tree_config:
             del node
             return
         elif (len(node.keys) < int(math.ceil(self.degree / 2)) and node.isleaf == False) or (len(node.values) < int(math.ceil((self.degree - 1) / 2)) and node.isleaf == True):
-
-            is_predecessor = 0
+            # redistribute와 merge를 하기 위한 변수 선언.
+            condition = 0
             pnode = node.parent
             PrevNode = -1
             NextNode = -1
-            PrevK = -1
-            PostK = -1
+            PreV = -1
+            NextV = -1
             for i, item in enumerate(pnode.keys):
                 if item == node:
                     if i > 0:
                         PrevNode = pnode.keys[i - 1]
-                        PrevK = pnode.values[i - 1]
+                        PreV = pnode.values[i - 1]
 
                     if i < len(pnode.keys) - 1:
                         NextNode = pnode.keys[i + 1]
-                        PostK = pnode.values[i]
+                        NextV = pnode.values[i]
 
             if PrevNode == -1:
-                ndash = NextNode
-                value_ = PostK
+                neighborNode = NextNode
+                value_ = NextV
             elif NextNode == -1:
-                is_predecessor = 1
-                ndash = PrevNode
-                value_ = PrevK
+                condition = 1
+                neighborNode = PrevNode
+                value_ = PreV
             else:
                 if len(node.values) + len(NextNode.values) < self.degree:
-                    ndash = NextNode
-                    value_ = PostK
+                    neighborNode = NextNode
+                    value_ = NextV
                 else:
-                    is_predecessor = 1
-                    ndash = PrevNode
-                    value_ = PrevK
+                    condition = 1
+                    neighborNode = PrevNode
+                    value_ = PreV
 
-            if len(node.values) + len(ndash.values) < self.degree:
-                if is_predecessor == 0:
-                    node_, ndash = ndash, node
-                ndash.keys += node_.keys
+            if len(node.values) + len(neighborNode.values) < self.degree:
+                # merge
+                if condition == 0:
+                    node_, neighborNode = neighborNode, node
+                neighborNode.keys += node_.keys
                 if not node_.check_leaf:
-                    ndash.values.append(value_)
+                    neighborNode.values.append(value_)
                 else:
-                    ndash.nextKey = node_.nextKey
-                ndash.values += node_.values
+                    neighborNode.nextKey = node_.nextKey
+                neighborNode.values += node_.values
 
-                if not ndash.check_leaf:
-                    for j in ndash.keys:
-                        j.parent = ndash
+                if not neighborNode.check_leaf:
+                    for j in neighborNode.keys:
+                        j.parent = neighborNode
 
-                self.deleteEntry(node_.parent, value_, node_)
+                self.condition_delete(node_.parent, value_, node_)
                 del node_
             else:
-                if is_predecessor == 1:
+                # redistribute
+                if condition == 1:
                     if not node.check_leaf:
-                        ndashpm = ndash.keys.pop(-1)
-                        ndashkm_1 = ndash.values.pop(-1)
-                        node.keys = [ndashpm] + node.keys
+                        neighborNodepm = neighborNode.keys.pop(-1)
+                        neighborNodekm_1 = neighborNode.values.pop(-1)
+                        node.keys = [neighborNodepm] + node.keys
                         node.values = [value_] + node.values
-                        parentNode = node.parent
-                        for i, item in enumerate(parentNode.values):
+                        pnode = node.parent
+                        for i, item in enumerate(pnode.values):
                             if item == value_:
-                                p.values[i] = ndashkm_1
+                                p.values[i] = neighborNodekm_1
                                 break
                     else:
-                        ndashpm = ndash.keys.pop(-1)
-                        ndashkm = ndash.values.pop(-1)
-                        node.keys = [ndashpm] + node.keys
-                        node.values = [ndashkm] + node.values
-                        parentNode = node.parent
-                        for i, item in enumerate(p.values):
+                        neighborNodepm = neighborNode.keys.pop(-1)
+                        neighborNodekm = neighborNode.values.pop(-1)
+                        node.keys = [neighborNodepm] + node.keys
+                        node.values = [neighborNodekm] + node.values
+                        pnode = node.parent
+                        for i, item in enumerate(pnode.values):
                             if item == value_:
-                                parentNode.values[i] = ndashkm
+                                pnode.values[i] = neighborNodekm
                                 break
                 else:
                     if not node.check_leaf:
-                        ndashp0 = ndash.keys.pop(0)
-                        ndashk0 = ndash.values.pop(0)
-                        node.keys = node.keys + [ndashp0]
+                        neighborNodep0 = neighborNode.keys.pop(0)
+                        neighborNodek0 = neighborNode.values.pop(0)
+                        node.keys = node.keys + [neighborNodep0]
                         node.values = node.values + [value_]
-                        parentNode = node.parent
-                        for i, item in enumerate(parentNode.values):
+                        pnode = node.parent
+                        for i, item in enumerate(pnode.values):
                             if item == value_:
-                                parentNode.values[i] = ndashk0
+                                pnode.values[i] = neighborNodek0
                                 break
                     else:
-                        ndashp0 = ndash.keys.pop(0)
-                        ndashk0 = ndash.values.pop(0)
-                        node.keys = node.keys + [ndashp0]
-                        node.values = node.values + [ndashk0]
-                        parentNode = node.parent
-                        for i, item in enumerate(parentNode.values):
+                        neighborNodep0 = neighborNode.keys.pop(0)
+                        neighborNodek0 = neighborNode.values.pop(0)
+                        node.keys = node.keys + [neighborNodep0]
+                        node.values = node.values + [neighborNodek0]
+                        pnode = node.parent
+                        for i, item in enumerate(pnode.values):
                             if item == value_:
-                                parentNode.values[i] = ndash.values[0]
+                                pnode.values[i] = neighborNode.values[0]
                                 break
 
-                if not ndash.check_leaf:
-                    for j in ndash.keys:
-                        j.parent = ndash
+                if not neighborNode.check_leaf:
+                    for j in neighborNode.keys:
+                        j.parent = neighborNode
                 if not node.check_leaf:
                     for j in node.keys:
                         j.parent = node
-                if not parentNode.check_leaf:
-                    for j in parentNode.keys:
-                        j.parent = parentNode
+                if not pnode.check_leaf:
+                    for j in pnode.keys:
+                        j.parent = pnode
+    def root_node_keys(self):
+        print("root_node_key", self.root_node.keys)
         
 
 
@@ -344,7 +354,7 @@ bptree.insert_value('5','33')
 bptree.insert_value('71','3432')
 
 bptree.insert_value('281','37247')
-
+bptree.root_node_keys()
 if(bptree.find('5','33')):
     print("Found")
 else:
